@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal Academico - Privacy-by-Design</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+</head>
+<body>
+  <div class="auth-card">
+    <div class="auth-left">
+      <span class="brand-tag">ICSA 252 • Seguridad y Privacidad</span>
+      <h1>Portal Institucional</h1>
+      <p class="auth-subtitle">Acceso autenticado con Argon2id, Boveda PII y control ABAC.</p>
+
+      <div class="tabs">
+        <button type="button" class="tab-btn {% if tab != 'registro' %}active{% endif %}" id="btnTabLogin" onclick="cambiarTab('login')">Iniciar Sesion</button>
+        <button type="button" class="tab-btn {% if tab == 'registro' %}active{% endif %}" id="btnTabRegistro" onclick="cambiarTab('registro')">Crear Cuenta</button>
+      </div>
+
+      <div id="panelLogin" class="form-panel {% if tab != 'registro' %}active{% endif %}">
+        {% if error %}
+        <div class="alert alert-error">{{ error }}</div>
+        {% endif %}
+        {% if success %}
+        <div class="alert alert-success">{{ success }}</div>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('auth.login') }}">
+          <div class="field-group">
+            <label for="login_matricula">Matricula Institucional</label>
+            <input type="text" id="login_matricula" name="matricula" required autocomplete="username" placeholder="Ej. 202438968">
+          </div>
+
+          <div class="field-group">
+            <label for="login_password">Contrasena</label>
+            <input type="password" id="login_password" name="password" required autocomplete="current-password" placeholder="••••••••••••">
+          </div>
+
+          <button type="submit" class="btn-submit">Entrar al Sistema</button>
+        </form>
+
+        <div class="demo-box">
+          <strong>Credenciales de prueba:</strong><br>
+          Admin: <code>202438968</code> / <code>AdminPriva2026!</code><br>
+          Profesor: <code>202422353</code> / <code>ProfePriva2026!</code><br>
+          Alumno: <code>202448106</code> / <code>AlumnoPriva2026!</code>
+        </div>
+      </div>
+
+      <div id="panelRegistro" class="form-panel {% if tab == 'registro' %}active{% endif %}">
+        {% if error_reg %}
+        <div class="alert alert-error">{{ error_reg }}</div>
+        {% endif %}
+
+        <form id="formRegistro" method="POST" action="{{ url_for('auth.registro') }}" novalidate>
+          <div class="field-row">
+            <div class="field-group">
+              <label for="reg_matricula">Matricula (6-12 digitos)</label>
+              <input type="text" id="reg_matricula" name="matricula" required placeholder="202455123">
+            </div>
+            <div class="field-group">
+              <label for="reg_curp">CURP (18 caracteres)</label>
+              <input type="text" id="reg_curp" name="curp" maxlength="18" required placeholder="ABCD040101HPLRRL09" style="text-transform:uppercase;">
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label for="reg_nombre">Nombre Completo</label>
+            <input type="text" id="reg_nombre" name="nombre_completo" required placeholder="Nombre y apellidos">
+          </div>
+
+          <div class="field-group">
+            <label for="reg_correo">Correo Electronico</label>
+            <input type="email" id="reg_correo" name="correo" required placeholder="usuario@alumno.buap.mx">
+            <div id="hintCorreo" class="regex-hint"></div>
+          </div>
+
+          <div class="field-group">
+            <label for="reg_password">Contrasena (minimo 8 caracteres)</label>
+            <input type="password" id="reg_password" name="password" minlength="8" required placeholder="Minimo 8 caracteres">
+          </div>
+
+          <button type="submit" class="btn-submit">Registrar en Boveda PII</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="auth-right">
+      <img src="{{ url_for('static', filename='resources/logo.png') }}" alt="Logo Institucional" class="logo-showcase">
+      <div class="right-title">Privacy-by-Design Architecture</div>
+      <p class="right-desc">
+        Proteccion integral de identidad mediante tokenizacion opaca, aislamiento de boveda PII, sanitizacion EXIF y auditoria SIEM en tiempo real.
+      </p>
+      <div class="security-pills">
+        <span class="pill">Argon2id + Pepper</span>
+        <span class="pill">ABAC Control</span>
+        <span class="pill">NIST SP 800-88</span>
+        <span class="pill">RFC 5424 SIEM</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    const inputCorreo = document.getElementById("reg_correo");
+    const hintCorreo = document.getElementById("hintCorreo");
+    const formRegistro = document.getElementById("formRegistro");
+
+    function cambiarTab(tab) {
+      document.getElementById("panelLogin").classList.toggle("active", tab === "login");
+      document.getElementById("panelRegistro").classList.toggle("active", tab === "registro");
+      document.getElementById("btnTabLogin").classList.toggle("active", tab === "login");
+      document.getElementById("btnTabRegistro").classList.toggle("active", tab === "registro");
+    }
+
+    function validarCorreoRegex() {
+      const val = inputCorreo.value.trim();
+      if (!val) {
+        inputCorreo.classList.remove("valid", "invalid");
+        hintCorreo.textContent = "";
+        hintCorreo.className = "regex-hint";
+        return false;
+      }
+      if (emailRegex.test(val)) {
+        inputCorreo.classList.add("valid");
+        inputCorreo.classList.remove("invalid");
+        hintCorreo.textContent = "Correo valido (Regex verificada)";
+        hintCorreo.className = "regex-hint ok";
+        return true;
+      } else {
+        inputCorreo.classList.add("invalid");
+        inputCorreo.classList.remove("valid");
+        hintCorreo.textContent = "Formato invalido: usa estructura usuario@dominio.ext";
+        hintCorreo.className = "regex-hint err";
+        return false;
+      }
+    }
+
+    inputCorreo.addEventListener("input", validarCorreoRegex);
+
+    formRegistro.addEventListener("submit", (e) => {
+      if (!validarCorreoRegex()) {
+        e.preventDefault();
+        inputCorreo.focus();
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Administrador - Privacy-by-Design</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-brand">
+      <img src="{{ url_for('static', filename='resources/logo.png') }}" alt="Logo">
+      <h1>ICSA 252 • Portal Institucional</h1>
+    </div>
+    <div>
+      <span class="role-pill">Administrador</span>
+      <a href="{{ url_for('auth.logout') }}" class="btn-logout">Cerrar Sesion</a>
+    </div>
+  </div>
+
+  <div class="portal-wrapper">
+    <nav class="nav-menu">
+      <button type="button" class="nav-tab active" onclick="abrirSeccion('sec-perfil', this)">Mi Perfil y Boveda PII</button>
+      <button type="button" class="nav-tab" onclick="abrirSeccion('sec-usuarios', this)">Usuarios y Materias</button>
+      <button type="button" class="nav-tab" onclick="abrirSeccion('sec-siem', this)">Monitor SIEM y Segregacion</button>
+      <button type="button" class="nav-tab" onclick="abrirSeccion('sec-privacidad', this)">Safe Harbor y Bitacora ARCO</button>
+    </nav>
+
+    <div class="main-white-card">
+      <section id="sec-perfil" class="tab-section active">
+        <div class="section-header">
+          <h2>Identidad Segregada en Boveda PII</h2>
+          <p>Gestion de credenciales con Argon2id + Pepper, rectificacion ARCO y sanitizacion EXIF.</p>
+        </div>
+
+        <div class="avatar-header">
+          {% if perfil.foto_ruta %}
+          <img src="{{ url_for('profile.ver_foto_protegida', filename=perfil.foto_ruta) }}" alt="Avatar">
+          {% endif %}
+          <div>
+            <div style="font-size:1.05rem; font-weight:700;">{{ perfil.nombre_completo }}</div>
+            <div style="font-size:0.85rem; color:#475569;">Matricula: {{ perfil.matricula }} | CURP: {{ perfil.curp }}</div>
+            <span class="token-chip">{{ perfil.token_opaco }}</span>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="sub-box">
+            <h3>Derecho ARCO: Rectificacion</h3>
+            <form id="formRectificar">
+              <label>Correo Institucional</label>
+              <input type="email" name="correo" value="{{ perfil.correo }}" required>
+              <label>Nueva Contrasena (recalcula Salt + Argon2id)</label>
+              <input type="password" name="password" placeholder="Dejar vacio para mantener actual">
+              <button type="submit" class="btn-primary">Guardar Cambios</button>
+            </form>
+          </div>
+
+          <div class="sub-box">
+            <h3>Fotografia sin Metadatos EXIF</h3>
+            <form id="formFoto" enctype="multipart/form-data">
+              <label>Seleccionar imagen (PNG, JPG, WEBP)</label>
+              <input type="file" name="foto" accept="image/png,image/jpeg,image/webp" required>
+              <button type="submit" class="btn-dark">Subir y Purgar EXIF</button>
+            </form>
+            <button type="button" class="btn-primary" style="margin-top:0.75rem;" onclick="probarFunctionCreep()">
+              Simular Function Creep (ABAC)
+            </button>
+          </div>
+        </div>
+        <pre id="consolaSeguridad" class="console">Listo para operaciones de perfil y auditoria ABAC...</pre>
+      </section>
+
+      <section id="sec-usuarios" class="tab-section">
+        <div class="section-header">
+          <h2>Gestion de Usuarios (TTL) y Materias</h2>
+          <p>Alta con retencion temporal opcional y asignacion academica por token opaco.</p>
+        </div>
+
+        <div class="grid-2">
+          <div class="sub-box">
+            <h3>Registrar Usuario en Boveda y Academia</h3>
+            <form id="formNuevoUsuario">
+              <label>Matricula</label>
+              <input type="text" name="matricula" required placeholder="202499999">
+              <label>Nombre Completo</label>
+              <input type="text" name="nombre_completo" required>
+              <label>CURP</label>
+              <input type="text" name="curp" maxlength="18" required>
+              <label>Correo</label>
+              <input type="email" name="correo" required>
+              <label>Contrasena</label>
+              <input type="password" name="password" required>
+              <label>Rol</label>
+              <select name="rol">
+                <option value="alumno">Alumno</option>
+                <option value="profesor">Profesor</option>
+                <option value="admin">Administrador</option>
+              </select>
+              <label>TTL en Dias (vacio = permanente)</label>
+              <input type="number" name="ttl_dias" min="1" placeholder="Ej. 30">
+              <button type="submit" class="btn-primary">Crear Cuenta</button>
+            </form>
+          </div>
+
+          <div class="sub-box">
+            <h3>Alta de Materia y Consulta Minimizada</h3>
+            <form id="formNuevaMateria">
+              <label>Clave Materia</label>
+              <input type="text" name="clave_materia" required placeholder="ICSA260">
+              <label>Nombre Materia</label>
+              <input type="text" name="nombre_materia" required>
+              <label>Matricula Profesor Titular</label>
+              <input type="text" name="matricula_profesor" required value="202422353">
+              <button type="submit" class="btn-dark">Crear Materia</button>
+            </form>
+
+            <button type="button" class="btn-primary" onclick="cargarUsuariosAdmin()">
+              Listar Usuarios Minimizados (ABAC)
+            </button>
+            <pre id="consolaAdmin" class="console">Resultados administrativos...</pre>
+          </div>
+        </div>
+      </section>
+
+      <section id="sec-siem" class="tab-section">
+        <div class="section-header">
+          <h2>Visor SIEM Syslog RFC 5424 y Segregacion de Bases</h2>
+          <p>Telemetria sanitizada por regex, correlacion de fuerza bruta y prueba de ausencia de PII en academia_db.</p>
+        </div>
+
+        <div style="display:flex; gap:0.6rem; flex-wrap:wrap; margin-bottom:1rem;">
+          <button type="button" class="btn-dark" style="margin-top:0;" onclick="cargarTelemetriaSIEM()">Actualizar Monitor SIEM</button>
+          <button type="button" class="btn-primary" style="margin-top:0;" onclick="simularFuerzaBruta()">Simular Fuerza Bruta (5 fallos)</button>
+        </div>
+
+        <div class="grid-2">
+          <div>
+            <label>Alertas de Correlacion (siem_alerts.json)</label>
+            <pre id="consolaAlertasSIEM" class="console">Sin alertas aun...</pre>
+            <label>Eventos Syslog RFC 5424 Sanitizados</label>
+            <pre id="consolaLogsSIEM" class="console">Cargando eventos...</pre>
+          </div>
+          <div>
+            <label>Tablas academia_db (Argon2id + Tokens sin PII)</label>
+            <pre id="consolaSegregacionBD" class="console">Cargando tablas...</pre>
+          </div>
+        </div>
+      </section>
+
+      <section id="sec-privacidad" class="tab-section">
+        <div class="section-header">
+          <h2>Desidentificacion Safe Harbor y Certificados NIST SP 800-88</h2>
+          <p>Exportacion estadistica con k-anonimato y auditoria de supresiones ARCO firmadas con SHA-256.</p>
+        </div>
+
+        <div style="display:flex; gap:0.6rem; flex-wrap:wrap;">
+          <button type="button" class="btn-primary" style="margin-top:0;" onclick="exportarSafeHarbor()">Exportar Dataset Safe Harbor</button>
+          <button type="button" class="btn-dark" style="margin-top:0;" onclick="cargarBitacoraARCO()">Consultar Bitacora ARCO (NIST)</button>
+        </div>
+        <pre id="consolaPrivacidad" class="console">Selecciona una herramienta de auditoria...</pre>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    function abrirSeccion(idSeccion, btn) {
+      document.querySelectorAll('.tab-section').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+      document.getElementById(idSeccion).classList.add('active');
+      btn.classList.add('active');
+    }
+  </script>
+  <script src="{{ url_for('admin.static', filename='admin.js') }}"></script>
+</body>
+</html>

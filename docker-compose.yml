@@ -1,0 +1,83 @@
+services:
+  flask_app:
+    build: ./app
+    container_name: priva_flask
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5000:5000"
+    env_file:
+      - .env
+    environment:
+      - ACADEMIA_DB_HOST=academia_db
+      - VAULT_DB_HOST=vault_pii
+      - SIEM_HOST=siem_collector
+      - SIEM_PORT=5514
+    volumes:
+      - ./app/uploads:/app/uploads
+      - ./siem/logs:/app/siem_logs:ro
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+      - seccomp=./security/seccomp-profile.json
+    depends_on:
+      - academia_db
+      - vault_pii
+      - siem_collector
+    networks:
+      - red_frontend
+      - red_academia
+      - red_boveda
+      - red_siem
+
+  academia_db:
+    image: mariadb:11.4
+    container_name: priva_academia_db
+    restart: unless-stopped
+    environment:
+      - MARIADB_ROOT_PASSWORD=${ACADEMIA_DB_PASS}
+      - MARIADB_DATABASE=academia_db
+      - MARIADB_USER=academia_user
+      - MARIADB_PASSWORD=${ACADEMIA_DB_PASS}
+    volumes:
+      - academia_data:/var/lib/mysql
+      - ./db_init/init_academia.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - red_academia
+
+  vault_pii:
+    image: mariadb:11.4
+    container_name: priva_vault_pii
+    restart: unless-stopped
+    environment:
+      - MARIADB_ROOT_PASSWORD=${VAULT_DB_PASS}
+      - MARIADB_DATABASE=vault_pii
+      - MARIADB_USER=vault_user
+      - MARIADB_PASSWORD=${VAULT_DB_PASS}
+    volumes:
+      - vault_data:/var/lib/mysql
+      - ./db_init/init_vault.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - red_boveda
+
+  siem_collector:
+    build: ./siem
+    container_name: priva_siem
+    restart: unless-stopped
+    volumes:
+      - ./siem/logs:/siem/logs
+    networks:
+      - red_siem
+
+volumes:
+  academia_data:
+  vault_data:
+
+networks:
+  red_frontend:
+  red_academia:
+    internal: true
+  red_boveda:
+    internal: true
+  red_siem:
+    internal: true

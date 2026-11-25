@@ -1,0 +1,9 @@
+.env
+__pycache__/
+*.py[cod]
+app/uploads/*.jpg
+app/uploads/*.png
+app/certificados/*.pdf
+app/certificados/*.json
+siem/logs/*.log
+siem/logs/*.json
