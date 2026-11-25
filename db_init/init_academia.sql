@@ -31,7 +31,7 @@ CREATE TABLE calificaciones (
 CREATE TABLE bitacora_arco (
     id_certificado VARCHAR(64) PRIMARY KEY,
     token_sanitizado VARCHAR(64) NOT NULL,
-    metodo_nist VARCHAR(50) NOT NULL,
+    metodo_nist VARCHAR(150) NOT NULL,
     hash_sha256 VARCHAR(64) NOT NULL,
     fecha_purga TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
