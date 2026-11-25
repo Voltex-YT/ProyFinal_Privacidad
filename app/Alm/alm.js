@@ -14,7 +14,7 @@ async function probarFunctionCreep() {
 }
 
 async function ejecutarSupresionARCO() {
-  if (!confirm("Esta accion sobrescribira y eliminara permanentemente tus datos PII y academicos bajo NIST SP 800-88. Continuar?")) {
+  if (!confirm("Esta accion sobrescribira y eliminara permanentemente tus datos PII y academicos bajo NIST SP 800-88, y cerrara tu sesion. Continuar?")) {
     return;
   }
   const res = await fetch("/perfil/arco/supresion", {
@@ -27,9 +27,24 @@ async function ejecutarSupresionARCO() {
   if (data.certificado && data.certificado.id_certificado) {
     const id = data.certificado.id_certificado;
     document.getElementById("descargasCertificado").innerHTML = `
-      <a class="btn" href="/perfil/arco/certificado/${id}/pdf">Descargar Certificado PDF</a>
-      <a class="btn secondary" href="/perfil/arco/certificado/${id}/json">Descargar Certificado JSON</a>
+      <div style="margin-top:0.85rem; padding:0.75rem; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; color:#991b1b; font-size:0.85rem; font-weight:600;">
+        Identidad purgada y sesion destruida. Redirigiendo al inicio de sesion en 4 segundos...
+      </div>
+      <div style="margin-top:0.65rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
+        <a class="btn-primary" style="margin-top:0;" href="/perfil/arco/certificado/${id}/pdf">Descargar Certificado PDF</a>
+        <a class="btn-dark" style="margin-top:0;" href="/perfil/arco/certificado/${id}/json">Descargar Certificado JSON</a>
+      </div>
     `;
+    const linkAuto = document.createElement("a");
+    linkAuto.href = `/perfil/arco/certificado/${id}/pdf`;
+    linkAuto.download = `${id}.pdf`;
+    document.body.appendChild(linkAuto);
+    linkAuto.click();
+    linkAuto.remove();
+
+    setTimeout(() => {
+      window.location.href = "/login";
+    }, 4000);
   }
 }
 
