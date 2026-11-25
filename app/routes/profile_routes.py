@@ -89,6 +89,7 @@ def supresion_arco():
         token_opaco=token,
         cert_folder=current_app.config["CERT_FOLDER"]
     )
+    session.clear()
     emitir_evento_siem(
         "ARCO_SUPPRESSION_NIST",
         f"token_sanitizado={cert['token_sanitizado']} cert={cert['id_certificado']} sha256={cert['hash_sha256']}",
