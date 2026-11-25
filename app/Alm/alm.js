@@ -28,23 +28,13 @@ async function ejecutarSupresionARCO() {
     const id = data.certificado.id_certificado;
     document.getElementById("descargasCertificado").innerHTML = `
       <div style="margin-top:0.85rem; padding:0.75rem; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; color:#991b1b; font-size:0.85rem; font-weight:600;">
-        Identidad purgada y sesion destruida. Redirigiendo al inicio de sesion en 4 segundos...
-      </div>
-      <div style="margin-top:0.65rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
-        <a class="btn-primary" style="margin-top:0;" href="/perfil/arco/certificado/${id}/pdf">Descargar Certificado PDF</a>
-        <a class="btn-dark" style="margin-top:0;" href="/perfil/arco/certificado/${id}/json">Descargar Certificado JSON</a>
+        Identidad purgada y sesion cerrada. Descargando certificado y redirigiendo al inicio de sesion...
       </div>
     `;
-    const linkAuto = document.createElement("a");
-    linkAuto.href = `/perfil/arco/certificado/${id}/pdf`;
-    linkAuto.download = `${id}.pdf`;
-    document.body.appendChild(linkAuto);
-    linkAuto.click();
-    linkAuto.remove();
-
+    window.location.href = `/perfil/arco/certificado/${id}/pdf`;
     setTimeout(() => {
-      window.location.href = "/login";
-    }, 4000);
+      window.location.replace("/login");
+    }, 2500);
   }
 }
 
