@@ -2,8 +2,8 @@ import os
 from flask import Blueprint, request, session, jsonify, send_from_directory, current_app
 from models.usuario import Usuario
 from middleware.abac import require_purpose, emitir_evento_siem
-from services.sanitizer import guardar_imagen_sanitizada, eliminar_imagen_segura
-from services.nist_wipe import ejecutar_supresion_nist_sp800_88
+from services.image_sanitizer import sanitizar_y_guardar_avatar
+from services.arco_cert import ejecutar_supresion_arco
 
 profile_bp = Blueprint("profile", __name__, url_prefix="/perfil")
 
@@ -30,7 +30,11 @@ def rectificar_datos():
     nueva_pass = data.get("password") or None
 
     usr.rectificar_datos(nuevo_correo=nuevo_correo, nueva_password=nueva_pass)
-    emitir_evento_siem("ARCO_RECTIFICATION", f"actor={usr.token_opaco} cambio_correo={bool(nuevo_correo)} cambio_pass={bool(nueva_pass)}", severidad=5)
+    emitir_evento_siem(
+        "ARCO_RECTIFICATION",
+        f"actor={usr.token_opaco} cambio_correo={bool(nuevo_correo)} cambio_pass={bool(nueva_pass)}",
+        severidad=5
+    )
     return jsonify({"status": "rectificado", "perfil": usr.obtener_perfil(minimizar=False)})
 
 @profile_bp.route("/foto", methods=["POST"])
@@ -47,10 +51,10 @@ def subir_foto():
     archivo = request.files["foto"]
     perfil = usr.obtener_perfil(minimizar=False)
     try:
-        nombre_guardado = guardar_imagen_sanitizada(
+        nombre_guardado = sanitizar_y_guardar_avatar(
             archivo,
-            current_app.config["UPLOAD_FOLDER"],
-            perfil["matricula"]
+            perfil["matricula"],
+            current_app.config["UPLOAD_FOLDER"]
         )
         usr.actualizar_foto(nombre_guardado)
         emitir_evento_siem("IMAGE_EXIF_PURGED", f"actor={usr.token_opaco} archivo={nombre_guardado}", severidad=6)
@@ -81,15 +85,11 @@ def supresion_arco():
         session.clear()
         return jsonify({"error": "Usuario no encontrado"}), 404
 
-    perfil = usr.obtener_perfil(minimizar=False)
-    if perfil.get("foto_ruta"):
-        eliminar_imagen_segura(current_app.config["UPLOAD_FOLDER"], perfil["foto_ruta"])
-
-    cert = ejecutar_supresion_nist_sp800_88(
-        token_opaco=token,
-        cert_folder=current_app.config["CERT_FOLDER"]
+    cert = ejecutar_supresion_arco(
+        token,
+        current_app.config["UPLOAD_FOLDER"],
+        current_app.config["CERT_FOLDER"]
     )
-    session.clear()
     emitir_evento_siem(
         "ARCO_SUPPRESSION_NIST",
         f"token_sanitizado={cert['token_sanitizado']} cert={cert['id_certificado']} sha256={cert['hash_sha256']}",
