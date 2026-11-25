@@ -92,7 +92,7 @@ def supresion_arco():
     )
     emitir_evento_siem(
         "ARCO_SUPPRESSION_NIST",
-        f"token_sanitizado={cert['token_sanitizado']} cert={cert['id_certificado']} sha256={cert['hash_sha256']}",
+        f"token_sanitizado={cert['token_sanitizado']} cert={cert['id_certificado']} sha256={cert.get('firma_integridad_sha256', 'N/A')}",
         severidad=5
     )
 
