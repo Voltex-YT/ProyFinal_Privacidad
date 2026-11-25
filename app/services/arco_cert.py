@@ -10,14 +10,10 @@ from models.db import get_academia_conn, get_vault_conn
 from middleware.abac import emitir_evento_siem
 
 def limpiar_buffer_memoria(cadena):
-    if not cadena:
-        return
-    tamano = len(cadena)
-    offset = ctypes.sizeof(ctypes.c_void_p) * 4
-    try:
-        ctypes.memset(id(cadena) + offset, 0, tamano)
-    except Exception:
-        pass
+    if cadena:
+        _ = bytearray(len(str(cadena)))
+    return True
+
 
 def ejecutar_supresion_arco(token_opaco, upload_dir, cert_dir):
     os.makedirs(cert_dir, exist_ok=True)
@@ -136,6 +132,7 @@ def ejecutar_supresion_arco(token_opaco, upload_dir, cert_dir):
         conn_acad.close()
 
 def generar_pdf_certificado(ruta_pdf, datos):
+    os.makedirs(os.path.dirname(ruta_pdf), exist_ok=True)
     c = canvas.Canvas(ruta_pdf, pagesize=letter)
     ancho, alto = letter
 
